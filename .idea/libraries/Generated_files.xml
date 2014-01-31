@@ -1,0 +1,27 @@
+<component name="libraryTable">
+  <library name="Generated files" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/effects/lifestream/bezier.js" />
+        <item url="file://$PROJECT_DIR$/effects/lifestream/stream.js" />
+        <item url="file://$PROJECT_DIR$/effects/lifestream/lifestream_v1.js" />
+        <item url="file://$PROJECT_DIR$/helpers/helpers.js" />
+        <item url="file://$PROJECT_DIR$/helpers/coord2d.js" />
+        <item url="file://$PROJECT_DIR$/effects/lifestream/lifestream.js" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/effects/lifestream/lifestream2.js" />
+      <root url="file://$PROJECT_DIR$/effects/lifestream/lifestream2.js" />
+      <root url="file://$PROJECT_DIR$/helpers/p2d.js" />
+      <root url="file://$PROJECT_DIR$/helpers/p2d.js" />
+      <root url="file://$PROJECT_DIR$/effects/lifestream/bezier.js" />
+      <root url="file://$PROJECT_DIR$/effects/lifestream/stream.js" />
+      <root url="file://$PROJECT_DIR$/effects/lifestream/lifestream_v1.js" />
+      <root url="file://$PROJECT_DIR$/helpers/helpers.js" />
+      <root url="file://$PROJECT_DIR$/helpers/coord2d.js" />
+      <root url="file://$PROJECT_DIR$/effects/lifestream/lifestream.js" />
+    </CLASSES>
+    <SOURCES />
+  </library>
+</component>
