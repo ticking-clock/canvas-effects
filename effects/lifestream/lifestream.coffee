@@ -14,16 +14,17 @@ cursor = new Kinetic.Star
   fill: 'yellow'
 
 streamArray = []
-streamCount = 15
+streamCount = 1
 
 for i in [0...streamCount]
   stream = new Stream
     interval: 1000 + (Math.random() * 50 - 25)
     maxSegments: 10
-    drawGizmos: false
+    drawGizmos: true
+    velocity: 150
     startPosition:
-      x: Math.random() * 60 - 30
-      y: Math.random() * 60 - 30
+      x: 800 +Math.random() * 0*60 - 30
+      y: 450 +Math.random() * 0*60 - 30
   streamArray.push stream
   layer.add stream
 
@@ -37,8 +38,8 @@ anim = new Kinetic.Animation (frame) ->
   adjusted = new Coord2d()
   for stream in streamArray
     adjusted.fromObject pos
-    adjusted.x += Math.random() * 60 - 30
-    adjusted.y += Math.random() * 60 - 30
+    #adjusted.x += Math.random() * 60 - 30
+    #adjusted.y += Math.random() * 60 - 30
     stream.update frame.timeDiff, adjusted
 , layer
 

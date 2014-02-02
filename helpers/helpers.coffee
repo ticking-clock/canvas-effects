@@ -1,13 +1,28 @@
 # Math extensions
 Math.lerp = (from, to, t) -> from + t * (to - from)
-Math.degToRad = Kinetic.Util._degToRad
-Math.radToDeg = Kinetic.Util._radToDeg
+Math.degToRad = (d) -> d * Math.PI / 180
+Math.radToDeg = (r) -> r * 180 / Math.PI
+#Math.degToRad = Kinetic.Util._degToRad
+#Math.radToDeg = Kinetic.Util._radToDeg
 Math.angleDiff = (a1, a2) ->
   twopi = 2 * Math.PI
   d = a2 - a1
   d += twopi while d < -Math.PI
   d -= twopi while d > Math.PI
   return d
+
+Math.angleQuadrant = (a) ->
+  if a >= 0 and a < Math.PI/2 then return 1
+  if a >= Math.PI/2 and a < Math.PI then return 2
+  if a >= Math.PI and a < 3*Math.PI/2 then return 3
+  return 4
+
+Math.sign = (x) ->
+  # This is not efficiently expressed in coffeescript
+  if x
+    if x < 0 then return -1 else return 0
+  else
+    return 0
 
 Math.splitBezier = (x1, y1, bx1, by1, bx2, by2, x2, y2, t0, t1) ->
   # De Casteljau algorithm

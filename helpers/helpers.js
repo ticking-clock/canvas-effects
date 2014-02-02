@@ -4,9 +4,13 @@
     return from + t * (to - from);
   };
 
-  Math.degToRad = Kinetic.Util._degToRad;
+  Math.degToRad = function(d) {
+    return d * Math.PI / 180;
+  };
 
-  Math.radToDeg = Kinetic.Util._radToDeg;
+  Math.radToDeg = function(r) {
+    return r * 180 / Math.PI;
+  };
 
   Math.angleDiff = function(a1, a2) {
     var d, twopi;
@@ -19,6 +23,31 @@
       d -= twopi;
     }
     return d;
+  };
+
+  Math.angleQuadrant = function(a) {
+    if (a >= 0 && a < Math.PI / 2) {
+      return 1;
+    }
+    if (a >= Math.PI / 2 && a < Math.PI) {
+      return 2;
+    }
+    if (a >= Math.PI && a < 3 * Math.PI / 2) {
+      return 3;
+    }
+    return 4;
+  };
+
+  Math.sign = function(x) {
+    if (x) {
+      if (x < 0) {
+        return -1;
+      } else {
+        return 0;
+      }
+    } else {
+      return 0;
+    }
   };
 
   Math.splitBezier = function(x1, y1, bx1, by1, bx2, by2, x2, y2, t0, t1) {

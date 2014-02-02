@@ -65,8 +65,39 @@
       return Math.atan2(y, x);
     };
 
-    Coord2d.angleFromDiff = function(x1, y1, x2, y2) {
+    Coord2d.angleFrom = function(x1, y1, x2, y2) {
       return this.angleFromXY(x2 - x1, y2 - y1);
+    };
+
+    Coord2d.angleBetween = function(x1, y1, x2, y2) {
+      var a1, a2, diff;
+      a2 = this.angleFromXY(x2, y2);
+      a1 = this.angleFromXY(x1, y1);
+      diff = a2 - a1;
+      if (diff < -Math.PI) {
+        diff += 2 * Math.PI;
+      }
+      if (diff > Math.PI) {
+        diff -= 2 * Math.PI;
+      }
+      return diff;
+    };
+
+    Coord2d.midAngleBetween = function(a1, a2) {
+      var final, temp;
+      if (a1 > a2) {
+        temp = a1;
+        a1 = a2;
+        a2 = temp;
+      }
+      if (a2 - a1 > Math.PI) {
+        a2 -= 2 * Math.PI;
+      }
+      final = 0.5 * (a1 + a2);
+      if (final < 0) {
+        final += 2 * Math.PI;
+      }
+      return final;
     };
 
     Coord2d.angleToDegrees = function(a) {

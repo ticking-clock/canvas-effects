@@ -21,16 +21,17 @@
 
   streamArray = [];
 
-  streamCount = 15;
+  streamCount = 1;
 
   for (i = _i = 0; 0 <= streamCount ? _i < streamCount : _i > streamCount; i = 0 <= streamCount ? ++_i : --_i) {
     stream = new Stream({
       interval: 1000 + (Math.random() * 50 - 25),
       maxSegments: 10,
-      drawGizmos: false,
+      drawGizmos: true,
+      velocity: 150,
       startPosition: {
-        x: Math.random() * 60 - 30,
-        y: Math.random() * 60 - 30
+        x: 800 + Math.random() * 0 * 60 - 30,
+        y: 450 + Math.random() * 0 * 60 - 30
       }
     });
     streamArray.push(stream);
@@ -50,8 +51,6 @@
     for (_j = 0, _len = streamArray.length; _j < _len; _j++) {
       stream = streamArray[_j];
       adjusted.fromObject(pos);
-      adjusted.x += Math.random() * 60 - 30;
-      adjusted.y += Math.random() * 60 - 30;
       _results.push(stream.update(frame.timeDiff, adjusted));
     }
     return _results;

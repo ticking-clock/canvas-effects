@@ -14,6 +14,7 @@ class @Stream extends Kinetic.Group
     @setup config
   setup: (config) ->
     if config.drawGizmos? then @drawGizmos = config.drawGizmos
+    if config.velocity? then @velocity = config.velocity
     if config.interval? then @interval = config.interval
     if config.maxSegments? then @maxSegments = config.maxSegments
     initPoint = if config.startPosition? then config.startPosition  else x:0, y:0
@@ -58,24 +59,25 @@ class @Stream extends Kinetic.Group
   lastPoint: -> @capturePoints[@capturePoints.length - 1]
   pushPoint: (c) -> @capturePoints.push c
   segmentAngleAt: (i) ->
+    # This gets called a lot. I should consider caching it.
     if i is 0
       p0 = @capturePoints[i]
       p1 = @capturePoints[i + 1]
-      return Coord2d.angleFromDiff p0.x, p0.y, p1.x, p1.y
+      return Coord2d.angleFrom p0.x, p0.y, p1.x, p1.y
     else if i is @capturePoints.length - 1
       p0 = @capturePoints[i-1]
       p1 = @capturePoints[i]
-      return Coord2d.angleFromDiff p0.x, p0.y, p1.x, p1.y
+      return Coord2d.angleFrom p0.x, p0.y, p1.x, p1.y
     p0 = @capturePoints[i-1]
     p1 = @capturePoints[i]
     p2 = @capturePoints[i+1]
-    a0 = Coord2d.angleFromDiff p0.x, p0.y, p1.x, p1.y
-    a1 = Coord2d.angleFromDiff p1.x, p1.y, p2.x, p2.y
-    a0 + 0.5 * (a1 - a0)
+    a0 = Coord2d.angleFrom p0.x, p0.y, p1.x, p1.y
+    a1 = Coord2d.angleFrom p1.x, p1.y, p2.x, p2.y
+    Coord2d.midAngleBetween a0, a1
 
   captureSegment: (target) ->
     last = @lastPoint()
-    newPoint = Coord2d.fromPolar @velocity, Coord2d.angleFromDiff(last.x, last.y, target.x, target.y)
+    newPoint = Coord2d.fromPolar @velocity, Coord2d.angleFrom(last.x, last.y, target.x, target.y)
     newPoint.add last
     @pushPoint newPoint
 
@@ -140,7 +142,7 @@ class @Stream extends Kinetic.Group
       if pLen > @maxSegments + 4
         @capturePoints.shift()
         pLen = @capturePoints.length
-        body.splice 0, 8
+        #body.splice 0, 8
 
       # Don't draw the body over the tail
       if @maxSegments >= 2

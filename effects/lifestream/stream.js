@@ -26,6 +26,9 @@
       if (config.drawGizmos != null) {
         this.drawGizmos = config.drawGizmos;
       }
+      if (config.velocity != null) {
+        this.velocity = config.velocity;
+      }
       if (config.interval != null) {
         this.interval = config.interval;
       }
@@ -89,24 +92,24 @@
       if (i === 0) {
         p0 = this.capturePoints[i];
         p1 = this.capturePoints[i + 1];
-        return Coord2d.angleFromDiff(p0.x, p0.y, p1.x, p1.y);
+        return Coord2d.angleFrom(p0.x, p0.y, p1.x, p1.y);
       } else if (i === this.capturePoints.length - 1) {
         p0 = this.capturePoints[i - 1];
         p1 = this.capturePoints[i];
-        return Coord2d.angleFromDiff(p0.x, p0.y, p1.x, p1.y);
+        return Coord2d.angleFrom(p0.x, p0.y, p1.x, p1.y);
       }
       p0 = this.capturePoints[i - 1];
       p1 = this.capturePoints[i];
       p2 = this.capturePoints[i + 1];
-      a0 = Coord2d.angleFromDiff(p0.x, p0.y, p1.x, p1.y);
-      a1 = Coord2d.angleFromDiff(p1.x, p1.y, p2.x, p2.y);
-      return a0 + 0.5 * (a1 - a0);
+      a0 = Coord2d.angleFrom(p0.x, p0.y, p1.x, p1.y);
+      a1 = Coord2d.angleFrom(p1.x, p1.y, p2.x, p2.y);
+      return Coord2d.midAngleBetween(a0, a1);
     };
 
     Stream.prototype.captureSegment = function(target) {
       var last, newPoint;
       last = this.lastPoint();
-      newPoint = Coord2d.fromPolar(this.velocity, Coord2d.angleFromDiff(last.x, last.y, target.x, target.y));
+      newPoint = Coord2d.fromPolar(this.velocity, Coord2d.angleFrom(last.x, last.y, target.x, target.y));
       newPoint.add(last);
       return this.pushPoint(newPoint);
     };
@@ -164,7 +167,6 @@
         if (pLen > this.maxSegments + 4) {
           this.capturePoints.shift();
           pLen = this.capturePoints.length;
-          body.splice(0, 8);
         }
         if (this.maxSegments >= 2) {
           while (body.length > (this.maxSegments - 2) * 8) {
