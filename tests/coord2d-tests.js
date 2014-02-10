@@ -200,9 +200,6 @@
     _results = [];
     for (_i = 0, _len = tests.length; _i < _len; _i++) {
       test = tests[_i];
-      if (test.a === 210) {
-        console.log("210 DEG TEST");
-      }
       p2 = Coord2d.fromCartesian(test.x, test.y);
       r = Coord2d.angleBetween(p1.x, p1.y, p2.x, p2.y);
       e = Math.degToRad(test.e);

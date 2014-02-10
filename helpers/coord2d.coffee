@@ -8,9 +8,12 @@ class @Coord2d
   constructor: ->
     @x = 0
     @y = 0
-  add: (c) ->
-    @x += c.x
-    @y += c.y
+  add: (x, y) ->
+    if typeof x is "object"
+      y = x.y
+      x = x.x
+    @x += x
+    @y += y
     @
   normalize: ->
     r = @constructor.radiusFromXY(@x, @y)
@@ -31,6 +34,10 @@ class @Coord2d
   @radiusFromXY: (x, y) -> Math.sqrt x * x + y * y
   @angleFromXY: (x, y) -> Math.atan2 y, x
   @angleFrom: (x1, y1, x2, y2) -> @angleFromXY x2 - x1, y2 - y1
+  @distBetween: (x1, y1, x2, y2) ->
+    dx = x2 - x1
+    dy = y2 - y1
+    Math.sqrt dx*dx + dy*dy
   @angleBetween: (x1, y1, x2, y2) ->
     a2 = @angleFromXY(x2, y2)
     a1 = @angleFromXY(x1, y1)

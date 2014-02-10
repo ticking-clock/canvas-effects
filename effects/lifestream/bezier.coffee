@@ -18,4 +18,4 @@ class @Bezier extends Kinetic.Shape
       context.bezierCurveTo p[i+2], p[i+3], p[i+4], p[i+5], p[i+6], p[i+7]
       context.fillStrokeShape(@)
 
-Kinetic.Factory.addGetterSetter(Bezier, 'points');
+Kinetic.Factory.addGetterSetter Bezier, 'points'

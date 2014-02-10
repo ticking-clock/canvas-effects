@@ -12,9 +12,19 @@
 
     Stream.prototype.interval = 1000;
 
-    Stream.prototype.tension = 0.40;
+    Stream.prototype.tension = 0.35;
 
     Stream.prototype.maxSegments = 5;
+
+    Stream.prototype.headFadeLength = 0.5;
+
+    Stream.prototype.tailFadeLength = 0.5;
+
+    Stream.prototype.opacity = 0.5;
+
+    Stream.prototype.strokeWidth = 2;
+
+    Stream.prototype.stroke = '#000000';
 
     function Stream(config) {
       Kinetic.Group.call(this, config);
@@ -22,20 +32,13 @@
     }
 
     Stream.prototype.setup = function(config) {
-      var initPoint;
-      if (config.drawGizmos != null) {
-        this.drawGizmos = config.drawGizmos;
+      var initPoint, setting, value;
+      for (setting in config) {
+        if (!__hasProp.call(config, setting)) continue;
+        value = config[setting];
+        this[setting] = value;
       }
-      if (config.velocity != null) {
-        this.velocity = config.velocity;
-      }
-      if (config.interval != null) {
-        this.interval = config.interval;
-      }
-      if (config.maxSegments != null) {
-        this.maxSegments = config.maxSegments;
-      }
-      initPoint = config.startPosition != null ? config.startPosition : {
+      initPoint = config.origin != null ? config.origin : {
         x: 0,
         y: 0
       };
@@ -46,27 +49,34 @@
         stroke: 'red',
         strokeWidth: 1
       });
-      this.kActiveSegmentsGizmo = new Kinetic.Line({
+      this.kHeadSegmentGizmo = new Kinetic.Line({
         points: [],
         stroke: 'yellow',
         strokeWidth: 1
       });
+      this.kTailSegmentGizmo = new Kinetic.Line({
+        points: [],
+        stroke: 'yellow',
+        strokeWidth: 1
+      });
+      this.kBodySegmentsGizmo = new Kinetic.Line({
+        points: [],
+        stroke: 'lime',
+        strokeWidth: 1
+      });
       this.kBody = new Bezier({
         points: [],
-        stroke: 'white',
-        opacity: 0.5,
+        stroke: 'black',
         strokeWidth: 2
       });
       this.kHead = new Bezier({
         points: [],
-        stroke: 'white',
-        opacity: 0.5,
+        stroke: 'cyan',
         strokeWidth: 2
       });
       this.kTail = new Bezier({
         points: [],
-        stroke: 'white',
-        opacity: 0.5,
+        stroke: 'cyan',
         strokeWidth: 2
       });
       this.gizmos = new Kinetic.Group();
@@ -106,6 +116,12 @@
       return Coord2d.midAngleBetween(a0, a1);
     };
 
+    Stream.prototype.controlPointAt = function(r, i) {
+      var c;
+      c = Coord2d.fromPolar(r, this.segmentAngleAt(i));
+      return c.add(this.capturePoints[i]);
+    };
+
     Stream.prototype.captureSegment = function(target) {
       var last, newPoint;
       last = this.lastPoint();
@@ -115,7 +131,7 @@
     };
 
     Stream.prototype.update = function(dt, target) {
-      var activeEnd, activeStart, body, c1, c2, coord, head, headPoints, i, isIntervalChange, newPoints, p1, p2, pLen, r, t, tail, tailPoints, _i, _j, _k, _l, _len, _ref, _ref1, _results;
+      var bodyPoints, c1, c2, coord, ctx, grad, gradRad, hLen, headPoints, i, iBody, iBodyHead, iBodyTail, iHead, iTail, isIntervalChange, newPoints, p0, p1, p2, p3, pEndx, pEndy, pLen, pStartx, pStarty, r, t, tBodyHead, tBodyTail, tDiff, tHead, tHeadStart, tLen, tTail, tTailStart, tailPoints, _i, _j, _len, _ref, _ref1;
       isIntervalChange = false;
       target = Coord2d.fromObject(target);
       this.currentTime += dt;
@@ -126,96 +142,214 @@
       }
       t = this.currentTime / this.interval;
       pLen = this.capturePoints.length;
-      body = this.kBody.getPoints();
-      head = this.kHead.getPoints();
-      tail = this.kTail.getPoints();
-      if (this.drawGizmos) {
-        newPoints = [];
-        _ref = this.capturePoints;
-        for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
-          coord = _ref[i];
-          newPoints.push(coord.x);
-          newPoints.push(coord.y);
-        }
-        this.kAllSegmentsGizmo.setPoints(newPoints);
-        newPoints = [];
-        if (pLen >= 4) {
-          for (i = _j = 0, _ref1 = pLen - 4; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; i = 0 <= _ref1 ? ++_j : --_j) {
-            newPoints.push(this.capturePoints[i].x);
-            newPoints.push(this.capturePoints[i].y);
-            newPoints.push(this.capturePoints[i + 1].x);
-            newPoints.push(this.capturePoints[i + 1].y);
-          }
-        }
-        if (pLen >= 3) {
-          activeStart = this.capturePoints[pLen - 3];
-          activeEnd = this.capturePoints[pLen - 2];
-          newPoints.push(activeStart.x);
-          newPoints.push(activeStart.y);
-          newPoints.push(Math.lerp(activeStart.x, activeEnd.x, t));
-          newPoints.push(Math.lerp(activeStart.y, activeEnd.y, t));
-          this.kActiveSegmentsGizmo.setPoints(newPoints);
-        }
-      }
-      if (pLen < 3) {
-        return;
-      }
-      c1 = new Coord2d();
-      c2 = new Coord2d();
-      r = this.tension * this.velocity;
       if (isIntervalChange) {
         if (pLen > this.maxSegments + 4) {
           this.capturePoints.shift();
           pLen = this.capturePoints.length;
         }
-        if (this.maxSegments >= 2) {
-          while (body.length > (this.maxSegments - 2) * 8) {
-            body.splice(0, 8);
+      }
+      tHead = t - this.headFadeLength;
+      tTail = t + this.tailFadeLength;
+      iTail = pLen < this.maxSegments + 2 ? -1 : pLen - this.maxSegments - 2;
+      iHead = pLen - 3;
+      iBodyTail = tTail < 1 ? iTail - 1 : iTail;
+      iBodyHead = tHead > 0 ? iHead : iHead - 1;
+      iBody = Math.max(iBodyTail + 1, 0);
+      r = this.tension * this.velocity;
+      if (pLen >= this.maxSegments + 2) {
+        tailPoints = [];
+        if (tTail < 1) {
+          if (pLen >= this.maxSegments + 3) {
+            p0 = this.capturePoints[iTail - 1];
+            p1 = this.capturePoints[iTail];
+            c1 = this.controlPointAt(r, iTail - 1);
+            c2 = this.controlPointAt(-r, iTail);
+            tailPoints.push.apply(tailPoints, Math.splitBezier(p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p1.x, p1.y, t, tTail));
           }
+        } else {
+          p1 = this.capturePoints[iTail];
+          p2 = this.capturePoints[iTail + 1];
+          if (pLen >= this.maxSegments + 3) {
+            p0 = this.capturePoints[iTail - 1];
+            c1 = this.controlPointAt(r, iTail - 1);
+            c2 = this.controlPointAt(-r, iTail);
+            tailPoints.push.apply(tailPoints, Math.splitBezier(p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p1.x, p1.y, t, 1));
+          }
+          c1 = this.controlPointAt(r, iTail);
+          c2 = this.controlPointAt(-r, iTail + 1);
+          tailPoints.push.apply(tailPoints, Math.splitBezier(p1.x, p1.y, c1.x, c1.y, c2.x, c2.y, p2.x, p2.y, 0, tTail - 1));
+        }
+        tLen = tailPoints.length;
+        if (tLen > 0) {
+          if (iTail > 0) {
+            gradRad = Coord2d.distBetween(tailPoints[0], tailPoints[1], tailPoints[tLen - 2], tailPoints[tLen - 1]);
+          } else {
+            gradRad = this.velocity * this.tailFadeLength;
+          }
+          ctx = this.getLayer().getContext();
+          grad = ctx.createRadialGradient(tailPoints[tLen - 2], tailPoints[tLen - 1], 0, tailPoints[tLen - 2], tailPoints[tLen - 1], gradRad);
+          grad.addColorStop(0, chroma(this.stroke).alpha(1).css());
+          grad.addColorStop(1, chroma(this.stroke).alpha(0).css());
+          this.kTail.setStroke(grad);
+        }
+        this.kTail.setStrokeWidth(this.strokeWidth);
+        this.kTail.setOpacity(this.opacity);
+        this.kTail.setPoints(tailPoints);
+      }
+      if (pLen > 2) {
+        bodyPoints = [];
+        if (pLen >= this.maxSegments + 2 && iBodyTail >= 0) {
+          tBodyTail = tTail > 1 ? tTail - 1 : tTail;
+          p1 = this.capturePoints[iBodyTail];
+          p2 = this.capturePoints[iBodyTail + 1];
+          c1 = this.controlPointAt(r, iBodyTail);
+          c2 = this.controlPointAt(-r, iBodyTail + 1);
+          bodyPoints.push.apply(bodyPoints, Math.splitBezier(p1.x, p1.y, c1.x, c1.y, c2.x, c2.y, p2.x, p2.y, tBodyTail, 1));
+        }
+        if (pLen > 3 && iBody >= 0 && iBodyHead >= 1) {
+          for (i = _i = iBody, _ref = iBodyHead - 1; iBody <= _ref ? _i <= _ref : _i >= _ref; i = iBody <= _ref ? ++_i : --_i) {
+            p1 = this.capturePoints[i];
+            p2 = this.capturePoints[i + 1];
+            c1 = this.controlPointAt(r, i);
+            c2 = this.controlPointAt(-r, i + 1);
+            bodyPoints.push(p1.x, p1.y, c1.x, c1.y, c2.x, c2.y, p2.x, p2.y);
+          }
+        }
+        if (pLen >= 3 && iBodyHead >= 0) {
+          tBodyHead = tHead < 0 ? tHead + 1 : tHead;
+          p1 = this.capturePoints[iBodyHead];
+          p2 = this.capturePoints[iBodyHead + 1];
+          c1 = this.controlPointAt(r, iBodyHead);
+          c2 = this.controlPointAt(-r, iBodyHead + 1);
+          bodyPoints.push.apply(bodyPoints, Math.splitBezier(p1.x, p1.y, c1.x, c1.y, c2.x, c2.y, p2.x, p2.y, 0, tBodyHead));
+        }
+        this.kBody.setStroke(this.stroke);
+        this.kBody.setStrokeWidth(this.strokeWidth);
+        this.kBody.setOpacity(this.opacity);
+        this.kBody.setPoints(bodyPoints);
+      }
+      if (pLen > 2) {
+        headPoints = [];
+        p1 = this.capturePoints[iHead];
+        p2 = this.capturePoints[iHead + 1];
+        if (tHead > 0) {
+          c1 = this.controlPointAt(r, iHead);
+          c2 = this.controlPointAt(-r, iHead + 1);
+          headPoints.push.apply(headPoints, Math.splitBezier(p1.x, p1.y, c1.x, c1.y, c2.x, c2.y, p2.x, p2.y, tHead, t));
+        } else {
           if (pLen >= 4) {
-            p1 = this.capturePoints[pLen - 4];
-            p2 = this.capturePoints[pLen - 3];
-            c1.fromPolar(r, this.segmentAngleAt(pLen - 4));
-            c1.add(p1);
-            c2.fromPolar(-r, this.segmentAngleAt(pLen - 3));
-            c2.add(p2);
-            body.push(p1.x, p1.y, c1.x, c1.y, c2.x, c2.y, p2.x, p2.y);
+            p0 = this.capturePoints[iHead - 1];
+            c1 = this.controlPointAt(r, iHead - 1);
+            c2 = this.controlPointAt(-r, iHead);
+            headPoints.push.apply(headPoints, Math.splitBezier(p0.x, p0.y, c1.x, c1.y, c2.x, c2.y, p1.x, p1.y, 1 + tHead, 1));
           }
+          c1 = this.controlPointAt(r, iHead);
+          c2 = this.controlPointAt(-r, iHead + 1);
+          headPoints.push.apply(headPoints, Math.splitBezier(p1.x, p1.y, c1.x, c1.y, c2.x, c2.y, p2.x, p2.y, 0, t));
         }
-      }
-      if (pLen >= 3) {
-        p1 = this.capturePoints[pLen - 3];
-        p2 = this.capturePoints[pLen - 2];
-        c1.fromPolar(r, this.segmentAngleAt(pLen - 3));
-        c1.add(p1);
-        c2.fromPolar(-r, this.segmentAngleAt(pLen - 2));
-        c2.add(p2);
-        headPoints = Math.splitBezier(p1.x, p1.y, c1.x, c1.y, c2.x, c2.y, p2.x, p2.y, 0, t);
-        if (head.length === 0) {
-          head.push.apply(head, headPoints);
+        hLen = headPoints.length;
+        if (iBodyHead >= 0) {
+          gradRad = Coord2d.distBetween(headPoints[0], headPoints[1], headPoints[hLen - 2], headPoints[hLen - 1]);
         } else {
-          for (i = _k = 0; _k <= 7; i = ++_k) {
-            head[i] = headPoints[i];
-          }
+          gradRad = this.velocity * this.headFadeLength;
         }
+        ctx = this.getLayer().getContext();
+        grad = ctx.createRadialGradient(headPoints[hLen - 2], headPoints[hLen - 1], 0, headPoints[hLen - 2], headPoints[hLen - 1], gradRad);
+        grad.addColorStop(0, chroma(this.stroke).alpha(0).css());
+        grad.addColorStop(1, chroma(this.stroke).alpha(1).css());
+        this.kHead.setStroke(grad);
+        this.kHead.setStrokeWidth(this.strokeWidth);
+        this.kHead.setOpacity(this.opacity);
+        this.kHead.setPoints(headPoints);
       }
-      if (pLen >= this.maxSegments + 3) {
-        i = pLen < this.maxSegments + 4 ? 0 : 1;
-        p1 = this.capturePoints[i];
-        p2 = this.capturePoints[i + 1];
-        c1.fromPolar(r, this.segmentAngleAt(i));
-        c1.add(p1);
-        c2.fromPolar(-r, this.segmentAngleAt(i + 1));
-        c2.add(p2);
-        tailPoints = Math.splitBezier(p1.x, p1.y, c1.x, c1.y, c2.x, c2.y, p2.x, p2.y, t, 1);
-        if (tail.length === 0) {
-          return tail.push.apply(tail, tailPoints);
-        } else {
-          _results = [];
-          for (i = _l = 0; _l <= 7; i = ++_l) {
-            _results.push(tail[i] = tailPoints[i]);
+      if (this.drawGizmos) {
+        newPoints = [];
+        _ref1 = this.capturePoints;
+        for (i = _j = 0, _len = _ref1.length; _j < _len; i = ++_j) {
+          coord = _ref1[i];
+          newPoints.push(coord.x, coord.y);
+        }
+        this.kAllSegmentsGizmo.setPoints(newPoints);
+        if (pLen >= 3) {
+          newPoints = [];
+          if (pLen >= this.maxSegments + 3) {
+            i = pLen < this.maxSegments + 4 ? 0 : 1;
+            p1 = this.capturePoints[i];
+            p2 = this.capturePoints[i + 1];
+            tTailStart = t + this.tailFadeLength;
+            if (tTailStart < 1) {
+              pStartx = Math.lerp(p1.x, p2.x, tTailStart);
+              pStarty = Math.lerp(p1.y, p2.y, tTailStart);
+              pEndx = p2.x;
+              pEndy = p2.y;
+            } else {
+              p3 = this.capturePoints[i + 2];
+              pStartx = Math.lerp(p2.x, p3.x, tTailStart - 1);
+              pStarty = Math.lerp(p2.y, p3.y, tTailStart - 1);
+              pEndx = p3.x;
+              pEndy = p3.y;
+            }
+            newPoints.push(pStartx, pStarty, pEndx, pEndy);
           }
-          return _results;
+          p1 = this.capturePoints[pLen - 3];
+          p2 = this.capturePoints[pLen - 2];
+          tHeadStart = t - this.headFadeLength;
+          if (tHeadStart > 0) {
+            pStartx = p1.x;
+            pStarty = p1.y;
+            pEndx = Math.lerp(p1.x, p2.x, tHeadStart);
+            pEndy = Math.lerp(p1.y, p2.y, tHeadStart);
+          } else if (pLen >= 4) {
+            p0 = this.capturePoints[pLen - 4];
+            pStartx = p0.x;
+            pStarty = p0.y;
+            pEndx = Math.lerp(p0.x, p1.x, 1 + tHeadStart);
+            pEndy = Math.lerp(p0.y, p1.y, 1 + tHeadStart);
+          }
+          newPoints.push(pStartx, pStarty, pEndx, pEndy);
+        }
+        if (pLen >= this.maxSegments + 3) {
+          newPoints = [];
+          i = pLen < this.maxSegments + 4 ? 0 : 1;
+          p1 = this.capturePoints[i];
+          p2 = this.capturePoints[i + 1];
+          pStartx = Math.lerp(p1.x, p2.x, t);
+          pStarty = Math.lerp(p1.y, p2.y, t);
+          tDiff = t + this.tailFadeLength;
+          if (tDiff < 1) {
+            pEndx = Math.lerp(p1.x, p2.x, tDiff);
+            pEndy = Math.lerp(p1.y, p2.y, tDiff);
+            newPoints.push(pStartx, pStarty, pEndx, pEndy);
+          } else {
+            p3 = this.capturePoints[i + 2];
+            pEndx = Math.lerp(p2.x, p3.x, tDiff - 1);
+            pEndy = Math.lerp(p2.y, p3.y, tDiff - 1);
+            newPoints.push(pStartx, pStarty, p2.x, p2.y, pEndx, pEndy);
+          }
+          this.kTailSegmentGizmo.setPoints(newPoints);
+        }
+        if (pLen >= 3) {
+          newPoints = [];
+          p1 = this.capturePoints[pLen - 3];
+          p2 = this.capturePoints[pLen - 2];
+          pEndx = Math.lerp(p1.x, p2.x, t);
+          pEndy = Math.lerp(p1.y, p2.y, t);
+          tHeadStart = t - this.headFadeLength;
+          if (tHeadStart > 0) {
+            pStartx = Math.lerp(p1.x, p2.x, tHeadStart);
+            pStarty = Math.lerp(p1.y, p2.y, tHeadStart);
+            newPoints.push(pStartx, pStarty, pEndx, pEndy);
+          } else {
+            if (pLen >= 4) {
+              p0 = this.capturePoints[pLen - 4];
+              pStartx = Math.lerp(p0.x, p1.x, 1 + tHeadStart);
+              pStarty = Math.lerp(p0.y, p1.y, 1 + tHeadStart);
+              newPoints.push(pStartx, pStarty, p1.x, p1.y, pEndx, pEndy);
+            } else {
+              newPoints.push(p1.x, p1.y, pEndx, pEndy);
+            }
+          }
+          return this.kHeadSegmentGizmo.setPoints(newPoints);
         }
       }
     };

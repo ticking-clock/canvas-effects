@@ -38,16 +38,17 @@
     return 4;
   };
 
-  Math.sign = function(x) {
-    if (x) {
-      if (x < 0) {
-        return -1;
-      } else {
-        return 0;
-      }
-    } else {
-      return 0;
-    }
+  Math.bezier = function(x1, y1, c1x, c1y, c2x, c2y, x2, y2, t) {
+    var u, u0, u1, u2, u3;
+    u = 1 - t;
+    u0 = u * u * u;
+    u1 = 3 * t * u * u;
+    u2 = 3 * t * t * u;
+    u3 = t * t * t;
+    return {
+      x: u0 * x1 + u1 * c1x + u2 * c2x + u3 * x2,
+      y: u0 * y1 + u1 * c1y + u2 * c2y + u3 * y2
+    };
   };
 
   Math.splitBezier = function(x1, y1, bx1, by1, bx2, by2, x2, y2, t0, t1) {

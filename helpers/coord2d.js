@@ -17,9 +17,13 @@
       this.y = 0;
     }
 
-    Coord2d.prototype.add = function(c) {
-      this.x += c.x;
-      this.y += c.y;
+    Coord2d.prototype.add = function(x, y) {
+      if (typeof x === "object") {
+        y = x.y;
+        x = x.x;
+      }
+      this.x += x;
+      this.y += y;
       return this;
     };
 
@@ -67,6 +71,13 @@
 
     Coord2d.angleFrom = function(x1, y1, x2, y2) {
       return this.angleFromXY(x2 - x1, y2 - y1);
+    };
+
+    Coord2d.distBetween = function(x1, y1, x2, y2) {
+      var dx, dy;
+      dx = x2 - x1;
+      dy = y2 - y1;
+      return Math.sqrt(dx * dx + dy * dy);
     };
 
     Coord2d.angleBetween = function(x1, y1, x2, y2) {

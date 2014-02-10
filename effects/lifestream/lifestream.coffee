@@ -1,46 +1,57 @@
-stage = new Kinetic.Stage
-  container: 'main'
-  width: 1600
-  height: 900
+class @Lifestream extends Kinetic.Group
+  streamCount: 1
+  origin: x:0, y:0
+  intervalVariance: 0
+  originVariance: 100
+  targetVariance: 100
+  colorVariance: 40
 
-layer = new Kinetic.Layer()
+  drawGizmos: false
+  velocity: 150
+  interval: 1000
+  tension: 0.35
+  maxSegments: 5
+  headFadeLength: 0.5
+  tailFadeLength: 0.5
+  opacity: 0.5
+  strokeWidth: 2
+  stroke: '#000000'
 
-cursor = new Kinetic.Star
-  x: 0
-  y: 0
-  numPoints: 5
-  innerRadius: 6
-  outerRadius: 12
-  fill: 'yellow'
+  constructor: (config) ->
+    Kinetic.Group.call @, config
+    @setup config
+  setup: (config) ->
+    @[setting] = value for own setting, value of config
+    @streamArray = []
+    for i in [0...@streamCount]
+      color = chroma(@stroke).darken(Math.random() * @colorVariance - 0.5 * @colorVariance)
+      stream = new Stream
+        interval: @interval + (Math.random() * @intervalVariance - 0.5 * @intervalVariance)
+        maxSegments: @maxSegments
+        drawGizmos: @drawGizmos
+        velocity: @velocity
+        strokeWidth: @strokeWidth
+        headFadeLength: @headFadeLength
+        tailFadeLength: @tailFadeLength
+        stroke: color.hex()
+        origin:
+          x: @origin.x + Math.random() * @originVariance - 0.5 * @originVariance
+          y: @origin.y + Math.random() * @originVariance - 0.5 * @originVariance
+      @streamArray.push stream
+      @add stream
 
-streamArray = []
-streamCount = 1
-
-for i in [0...streamCount]
-  stream = new Stream
-    interval: 1000 + (Math.random() * 50 - 25)
-    maxSegments: 10
-    drawGizmos: true
-    velocity: 150
-    startPosition:
-      x: 800 +Math.random() * 0*60 - 30
-      y: 450 +Math.random() * 0*60 - 30
-  streamArray.push stream
-  layer.add stream
-
-#layer.add cursor
-stage.add layer
-
-anim = new Kinetic.Animation (frame) ->
-  pos = stage.getPointerPosition()
-  return if not pos?    # TODO: separately track if the cursor leaves the stage and stop() the animation
-  #cursor.setPosition pos
-  adjusted = new Coord2d()
-  for stream in streamArray
-    adjusted.fromObject pos
-    #adjusted.x += Math.random() * 60 - 30
-    #adjusted.y += Math.random() * 60 - 30
-    stream.update frame.timeDiff, adjusted
-, layer
-
-anim.start()
+  start: ->
+    unless @anim
+      layer = @getLayer()
+      @anim = new Kinetic.Animation (frame) =>
+        stage = @getStage()
+        pos = stage.getPointerPosition()
+        return if not pos?    # TODO: separately track if the cursor leaves the stage and stop() the animation
+        adjusted = new Coord2d()
+        for stream in @streamArray
+          adjusted.fromObject pos
+          adjusted.x += Math.random() * @targetVariance - 0.5 * @targetVariance
+          adjusted.y += Math.random() * @targetVariance - 0.5 * @targetVariance
+          stream.update frame.timeDiff, adjusted
+      , layer
+    @anim.start()

@@ -56,8 +56,6 @@ test "angleBetween in Q1 (45 deg) returns correct results", ->
   ]
 
   for test in tests
-    if test.a is 210
-      console.log "210 DEG TEST"
     p2 = Coord2d.fromCartesian test.x, test.y
     r = Coord2d.angleBetween p1.x, p1.y, p2.x, p2.y
     e = Math.degToRad test.e

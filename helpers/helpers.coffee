@@ -2,8 +2,7 @@
 Math.lerp = (from, to, t) -> from + t * (to - from)
 Math.degToRad = (d) -> d * Math.PI / 180
 Math.radToDeg = (r) -> r * 180 / Math.PI
-#Math.degToRad = Kinetic.Util._degToRad
-#Math.radToDeg = Kinetic.Util._radToDeg
+
 Math.angleDiff = (a1, a2) ->
   twopi = 2 * Math.PI
   d = a2 - a1
@@ -17,12 +16,14 @@ Math.angleQuadrant = (a) ->
   if a >= Math.PI and a < 3*Math.PI/2 then return 3
   return 4
 
-Math.sign = (x) ->
-  # This is not efficiently expressed in coffeescript
-  if x
-    if x < 0 then return -1 else return 0
-  else
-    return 0
+Math.bezier = (x1, y1, c1x, c1y, c2x, c2y, x2, y2, t) ->
+  u = 1 - t
+  u0 = u * u * u
+  u1 = 3 * t * u * u
+  u2 = 3 * t * t * u
+  u3 = t * t * t
+  x: u0*x1 + u1*c1x + u2*c2x + u3*x2
+  y: u0*y1 + u1*c1y + u2*c2y + u3*y2
 
 Math.splitBezier = (x1, y1, bx1, by1, bx2, by2, x2, y2, t0, t1) ->
   # De Casteljau algorithm
